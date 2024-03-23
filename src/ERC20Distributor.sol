@@ -129,14 +129,13 @@ contract ERC20Distributor is IDistributor, Ownable, ReentrancyGuard {
     }
 
     function updateShare(address addr) external onlyOwner {
-        uint256 balance = token.balanceOf(addr);
-
         Share storage share = shareholders[addr];
-
-        totalShares = totalShares + balance - share.amount;
 
         _earn(share);
 
+        uint256 balance = token.balanceOf(addr);
+
+        totalShares = totalShares + balance - share.amount;
         share.amount = balance;
     }
 

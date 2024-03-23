@@ -5,8 +5,11 @@ import "forge-std/Test.sol";
 import {ERC20TaxRewardsTest} from "./ERC20TaxRewards.t.sol";
 
 contract SwapTest is ERC20TaxRewardsTest {
-    function testSwap() public {
+    function testSwapDefault() public {
         address user = vm.addr(1);
+
+        // initialize the lp.
+        initialize(1000 ether);
 
         // buy 1 ether of tokens.
         buyToken(user, 1 ether);

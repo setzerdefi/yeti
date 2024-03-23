@@ -5,6 +5,8 @@ import {ERC20TaxRewardsTest} from "./ERC20TaxRewards.t.sol";
 
 contract LiquidityTest is ERC20TaxRewardsTest {
     function testRemoveAllLiquidity() public {
+        initialize(1000 ether);
+
         token.removeMaxWallet();
 
         removeLiquidity(address(this));
@@ -13,8 +15,11 @@ contract LiquidityTest is ERC20TaxRewardsTest {
         assertApproxEqRel(rewardToken.balanceOf(address(this)), 1000 ether, 0.01e18);
     }
 
-    function testProvideLiquidity() public {
+    function testProvideLiquidityDefault() public {
         address provider = vm.addr(1);
+
+        // initialize the lp.
+        initialize(1000 ether);
 
         // buy some tokens and put them as liquidity.
         buyToken(provider, 1 ether);

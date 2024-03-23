@@ -2,26 +2,13 @@
 pragma solidity ^0.8.25;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
-import {IUniswapV2Pair} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import {Yeti} from "../src/Yeti.sol";
+import {ERC20TaxRewardsTest} from "./ERC20TaxRewards.t.sol";
 
-contract YetiTest is Test {
-    Yeti internal token;
-    IUniswapV2Pair internal pair;
-    IUniswapV2Router02 internal router;
-    IERC20Metadata internal rewardToken;
-
-    function setUp() public {
-        token = new Yeti();
-
-        pair = token.pair();
-        router = token.router();
-        rewardToken = token.rewardToken();
-    }
-
+contract InitializeTest is ERC20TaxRewardsTest {
     function testInitialize() public {
+        // max wallet is infinite.
+        assertEq(token.maxWallet(), type(uint256).max);
+
         // token has all the initial supply.
         assertEq(token.balanceOf(address(token)), token.TOTAL_SUPPLY());
 
@@ -35,20 +22,16 @@ contract YetiTest is Test {
         assertEq(token.balanceOf(vm.addr(1)), allocation);
         assertEq(token.balanceOf(vm.addr(2)), allocation);
         assertEq(token.balanceOf(vm.addr(3)), allocation);
+        assertEq(distributor.totalShares(), 3 * allocation);
 
         // initialize liquidity and send lp tokens to owner.
-        uint256 rewardTokenAmount = 1000 ether;
-
-        deal(address(rewardToken), address(this), rewardTokenAmount);
-
-        rewardToken.approve(address(token), rewardTokenAmount);
-
-        token.initialize(rewardTokenAmount);
+        initialize(1000 ether);
 
         assertEq(token.maxWallet(), token.TOTAL_SUPPLY() / 100);
         assertEq(token.balanceOf(address(pair)), token.TOTAL_SUPPLY() - (3 * allocation));
-        assertEq(rewardToken.balanceOf(address(pair)), rewardTokenAmount);
+        assertEq(rewardToken.balanceOf(address(pair)), 1000 ether);
         assertApproxEqAbs(pair.totalSupply(), pair.balanceOf(address(this)), 1000);
+        assertEq(distributor.totalShares(), 3 * allocation);
 
         // can't allocate anymore.
         vm.expectRevert("!initialized");

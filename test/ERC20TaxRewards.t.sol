@@ -22,18 +22,18 @@ contract ERC20TaxRewardsTest is Test {
         router = token.router();
         rewardToken = token.rewardToken();
         distributor = token.distributor();
+    }
 
-        uint256 rewardTokenAmount = 1000 ether;
+    function withDecimals(uint256 amount) internal view returns (uint256) {
+        return amount * 10 ** token.decimals();
+    }
 
+    function initialize(uint256 rewardTokenAmount) internal {
         deal(address(rewardToken), address(this), rewardTokenAmount);
 
         rewardToken.approve(address(token), rewardTokenAmount);
 
         token.initialize(rewardTokenAmount);
-    }
-
-    function withDecimals(uint256 amount) internal view returns (uint256) {
-        return amount * 10 ** token.decimals();
     }
 
     function addLiquidity(address addr, uint256 amountTokenDesired, uint256 amountRewardTokenDesired) internal {

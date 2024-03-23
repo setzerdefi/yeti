@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -9,7 +8,7 @@ import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUn
 import {ERC20TaxRewards} from "./ERC20TaxRewards.sol";
 import {IDistributor} from "./IDistributor.sol";
 
-contract ERC20Distributor is IDistributor, Ownable, ReentrancyGuard {
+contract ERC20Distributor is IDistributor, ReentrancyGuard {
     using SafeERC20 for IERC20Metadata;
 
     // =========================================================================
@@ -54,9 +53,7 @@ contract ERC20Distributor is IDistributor, Ownable, ReentrancyGuard {
     // constructor.
     // =========================================================================
 
-    constructor(ERC20TaxRewards _token, IUniswapV2Router02 _router, IERC20Metadata _rewardToken)
-        Ownable(address(_token))
-    {
+    constructor(ERC20TaxRewards _token, IUniswapV2Router02 _router, IERC20Metadata _rewardToken) {
         token = _token;
         router = _router;
         rewardToken = _rewardToken;
@@ -128,7 +125,9 @@ contract ERC20Distributor is IDistributor, Ownable, ReentrancyGuard {
         emit Distribute(msg.sender, amountToDistribute);
     }
 
-    function updateShare(address addr) external onlyOwner {
+    function updateShare(address addr) external {
+        require(address(token) == msg.sender, "!token");
+
         Share storage share = shareholders[addr];
 
         _earn(share);

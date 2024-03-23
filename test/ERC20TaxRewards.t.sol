@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IUniswapV2Pair} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
@@ -22,10 +22,6 @@ contract ERC20TaxRewardsTest is Test {
         router = token.router();
         rewardToken = token.rewardToken();
         distributor = token.distributor();
-    }
-
-    function withDecimals(uint256 amount) internal view returns (uint256) {
-        return amount * 10 ** token.decimals();
     }
 
     function initialize(uint256 rewardTokenAmount) internal {

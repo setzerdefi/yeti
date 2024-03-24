@@ -4,6 +4,10 @@ pragma solidity ^0.8.25;
 import {ERC20TaxRewardsTest} from "./ERC20TaxRewards.t.sol";
 
 contract DistributionTest is ERC20TaxRewardsTest {
+    event Claim(address indexed addr, address indexed to, uint256 amount);
+    event Compound(address indexed addr, address indexed to, uint256 amount);
+    event Distribute(address indexed addr, uint256 amount);
+
     function bo(uint256 i) private view returns (uint256) {
         return token.balanceOf(vm.addr(i));
     }
@@ -12,10 +16,20 @@ contract DistributionTest is ERC20TaxRewardsTest {
         return distributor.pendingRewards(vm.addr(i));
     }
 
+    function rbo(uint256 i) private view returns (uint256) {
+        return rewardToken.balanceOf(vm.addr(i));
+    }
+
     function claim(uint256 i) private {
         vm.prank(vm.addr(i));
 
         distributor.claim(vm.addr(i));
+    }
+
+    function compound(uint256 i) private {
+        vm.prank(vm.addr(i));
+
+        distributor.compound(vm.addr(i), 0);
     }
 
     function emptyRewards(uint256 i) private {
@@ -26,7 +40,241 @@ contract DistributionTest is ERC20TaxRewardsTest {
         rewardToken.transfer(vm.addr(100), balance);
     }
 
-    function testDistribution() public {
+    function distribute(uint256 amount) private {
+        uint256 balance = rewardToken.balanceOf(address(distributor));
+
+        deal(address(rewardToken), address(distributor), balance + amount);
+
+        distributor.distribute(0);
+    }
+
+    function testTotalRewardDistributedIncreases() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        assertEq(distributor.totalRewardDistributed(), 0);
+
+        distribute(1 ether);
+
+        assertEq(distributor.totalRewardDistributed(), 1 ether);
+
+        distribute(2 ether);
+
+        assertEq(distributor.totalRewardDistributed(), 3 ether);
+    }
+
+    function testTotalRewardClaimedIncreases() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        distribute(2 ether);
+
+        claim(1);
+
+        assertEq(distributor.totalRewardClaimed(), 1 ether);
+
+        claim(2);
+
+        assertEq(distributor.totalRewardClaimed(), 2 ether);
+    }
+
+    function testTotalRewardCompoundedIncreases() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        startTrading(1000 ether);
+
+        token.removeMaxWallet();
+
+        distribute(2 ether);
+
+        compound(1);
+
+        assertEq(distributor.totalRewardCompounded(), 1 ether);
+
+        compound(2);
+
+        assertEq(distributor.totalRewardCompounded(), 2 ether);
+    }
+
+    function testClaimSameShareSameRewards() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        distribute(2 ether);
+
+        assertEq(pr(1), 1 ether);
+        assertEq(pr(2), 1 ether);
+
+        claim(1);
+        claim(2);
+
+        assertEq(rbo(1), 1 ether);
+        assertEq(rbo(2), 1 ether);
+    }
+
+    function testClaimTwiceShareTwiceRewards() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), 1 * allocation);
+        token.allocate(vm.addr(2), 2 * allocation);
+
+        distribute(3 ether);
+
+        assertEq(pr(1), 1 ether);
+        assertEq(pr(2), 2 ether);
+
+        claim(1);
+        claim(2);
+
+        assertEq(rbo(1), 1 ether);
+        assertEq(rbo(2), 2 ether);
+    }
+
+    function testTokenDonations() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+        token.allocate(vm.addr(3), allocation);
+
+        startTrading(1000 ether);
+
+        vm.prank(vm.addr(3));
+
+        token.transfer(address(distributor), allocation);
+
+        distribute(0);
+
+        uint256 rewardsAmount = rewardToken.balanceOf(address(distributor));
+
+        assertGt(pr(1), 0);
+        assertGt(pr(2), 0);
+        assertGt(rewardsAmount, 0);
+
+        claim(1);
+        claim(2);
+
+        assertGt(rbo(1), 0);
+        assertGt(rbo(2), 0);
+        assertApproxEqRel(rbo(1) + rbo(2), rewardsAmount, 0.01e18);
+    }
+
+    function testRewardTokenDonations() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        distribute(2 ether);
+
+        assertEq(pr(1), 1 ether);
+        assertEq(pr(2), 1 ether);
+
+        claim(1);
+        claim(2);
+
+        assertEq(rbo(1), 1 ether);
+        assertEq(rbo(2), 1 ether);
+    }
+
+    function testBothTokenDonations() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+        token.allocate(vm.addr(3), allocation);
+
+        startTrading(1000 ether);
+
+        vm.prank(vm.addr(3));
+
+        token.transfer(address(distributor), allocation);
+
+        distribute(1 ether);
+
+        uint256 rewardsAmount = rewardToken.balanceOf(address(distributor));
+
+        assertGt(pr(1), 0);
+        assertGt(pr(2), 0);
+        assertGt(rewardsAmount, 1 ether);
+
+        claim(1);
+        claim(2);
+
+        assertGt(rbo(1), 0);
+        assertGt(rbo(2), 0);
+        assertApproxEqRel(rbo(1) + rbo(2), rewardsAmount, 0.01e18);
+    }
+
+    function testDistributeEmits() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        vm.expectEmit(true, true, true, true, address(distributor));
+
+        emit Distribute(address(this), 1 ether);
+
+        distribute(1 ether);
+    }
+
+    function testClaimEmits() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        distribute(2 ether);
+
+        vm.expectEmit(true, true, true, true, address(distributor));
+
+        emit Claim(vm.addr(1), vm.addr(1), 1 ether);
+
+        claim(1);
+
+        vm.expectEmit(true, true, true, true, address(distributor));
+
+        emit Claim(vm.addr(2), vm.addr(2), 1 ether);
+
+        claim(2);
+    }
+
+    function testCompoundEmits() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        startTrading(1000 ether);
+
+        token.removeMaxWallet();
+
+        distribute(2 ether);
+
+        vm.expectEmit(true, true, true, true, address(distributor));
+
+        emit Compound(vm.addr(1), vm.addr(1), 1 ether);
+
+        compound(1);
+
+        vm.expectEmit(true, true, true, true, address(distributor));
+
+        emit Compound(vm.addr(2), vm.addr(2), 1 ether);
+
+        compound(2);
+    }
+
+    function testDistributionIntegration1() public {
         // allocation shares are accounted.
         uint256 allocation = 1_000_000 ether;
 
@@ -142,12 +390,12 @@ contract DistributionTest is ERC20TaxRewardsTest {
         claim(6);
 
         // check claimed amount.
-        assertEq(rewardToken.balanceOf(vm.addr(1)), pr1);
-        assertEq(rewardToken.balanceOf(vm.addr(2)), pr2);
-        assertEq(rewardToken.balanceOf(vm.addr(3)), pr3);
-        assertEq(rewardToken.balanceOf(vm.addr(4)), pr4);
-        assertEq(rewardToken.balanceOf(vm.addr(5)), pr5);
-        assertEq(rewardToken.balanceOf(vm.addr(6)), pr6);
+        assertEq(rbo(1), pr1);
+        assertEq(rbo(2), pr2);
+        assertEq(rbo(3), pr3);
+        assertEq(rbo(4), pr4);
+        assertEq(rbo(5), pr5);
+        assertEq(rbo(6), pr6);
 
         // check distributor final state.
         assertEq(token.balanceOf(address(distributor)), 0);

@@ -41,14 +41,6 @@ contract ERC20Distributor is IDistributor {
     uint256 public totalRewardDistributed;
 
     // =========================================================================
-    // events.
-    // =========================================================================
-
-    event Claim(address indexed addr, address indexed to, uint256 amount);
-    event Compound(address indexed addr, address indexed to, uint256 amount);
-    event Distribute(address indexed addr, uint256 amount);
-
-    // =========================================================================
     // constructor.
     // =========================================================================
 
@@ -108,14 +100,18 @@ contract ERC20Distributor is IDistributor {
         if (totalShares == 0) return;
 
         uint256 collectedTaxAmount = token.balanceOf(address(this));
+        uint256 originalRewardBalance = rewardToken.balanceOf(address(this));
 
-        if (collectedTaxAmount == 0) return;
+        // take the donation to the contract into account.
+        // balance - amount to claim is the amount of donations to the contract.
+        uint256 amountToClaim = totalRewardDistributed - totalRewardClaimed - totalRewardCompounded;
+        uint256 amountToDistribute = originalRewardBalance - amountToClaim;
 
-        uint256 originalBalance = rewardToken.balanceOf(address(this));
+        if (collectedTaxAmount > 0) {
+            _swapTokenForRewardToken(address(this), collectedTaxAmount, amountOutMin);
 
-        _swapTokenForRewardToken(address(this), collectedTaxAmount, amountOutMin);
-
-        uint256 amountToDistribute = rewardToken.balanceOf(address(this)) - originalBalance;
+            amountToDistribute += (rewardToken.balanceOf(address(this)) - originalRewardBalance);
+        }
 
         if (amountToDistribute == 0) return;
 

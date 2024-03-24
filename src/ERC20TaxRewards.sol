@@ -47,6 +47,10 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     uint24 public buyFee = 2400;
     uint24 public sellFee = 2400;
 
+    // can disable rewards mechanism in case of a problem.
+    // can't be reenabled after operator calling _emergencyDisableRewards().
+    bool public rewardsEnabled;
+
     // =========================================================================
     // modifiers.
     // =========================================================================
@@ -73,6 +77,8 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
         distributor = new ERC20Distributor(this, router, rewardToken);
 
         _mint(address(this), _totalSupply);
+
+        rewardsEnabled = true;
     }
 
     // =========================================================================
@@ -80,13 +86,13 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // =========================================================================
 
     function allocate(address to, uint256 amount) external onlyOwner {
-        require(startBlock == 0, "!initialized");
+        require(startBlock == 0, "!started");
 
         this.transfer(to, amount);
     }
 
-    function initialize(uint256 rewardTokenAmount) external onlyOwner {
-        require(startBlock == 0, "!initialized");
+    function startTrading(uint256 rewardTokenAmount) external onlyOwner {
+        require(startBlock == 0, "!started");
         require(rewardTokenAmount > 0, "!liquidity");
 
         startBlock = block.number;
@@ -114,12 +120,8 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
         operator = _operator;
     }
 
-    function setDistributor(IDistributor _distributor) external onlyOperator {
-        require(address(0) != address(_distributor), "!address");
-        distributor = _distributor;
-    }
-
     function setFee(uint24 _buyFee, uint24 _sellFee) external onlyOperator {
+        require(rewardsEnabled, "!rewards");
         require(_buyFee <= maxSwapFee, "!buyFee");
         require(_sellFee <= maxSwapFee, "!sellFee");
 
@@ -131,26 +133,35 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
         maxWallet = type(uint256).max;
     }
 
+    function _emergencyDisableRewards() external onlyOperator {
+        buyFee = 0;
+        sellFee = 0;
+        rewardsEnabled = false;
+    }
+
     // =========================================================================
-    // internal functions.
+    // public functions.
     // =========================================================================
 
-    function _isExcludedFromTaxes(address addr) private view returns (bool) {
+    function isExcludedFromTaxes(address addr) public view returns (bool) {
         return address(this) == addr || address(router) == addr || address(distributor) == addr;
     }
 
-    function _isExcludedFromMaxWallet(address addr) private view returns (bool) {
-        return _isExcludedFromTaxes(addr) || address(pair) == addr;
+    function isExcludedFromMaxWallet(address addr) public view returns (bool) {
+        return isExcludedFromTaxes(addr) || address(pair) == addr;
     }
 
-    function _isExcludedFromRewards(address addr) private view returns (bool) {
-        return
-            _isExcludedFromMaxWallet(addr) || address(0) == addr || 0x000000000000000000000000000000000000dEaD == addr;
+    function isExcludedFromRewards(address addr) public view returns (bool) {
+        return isExcludedFromMaxWallet(addr) || address(0) == addr || 0x000000000000000000000000000000000000dEaD == addr;
     }
+
+    // =========================================================================
+    // implement taxes.
+    // =========================================================================
 
     function _update(address from, address to, uint256 amount) internal override {
-        bool isTaxedBuy = address(pair) == from && !_isExcludedFromTaxes(to);
-        bool isTaxedSell = !_isExcludedFromTaxes(from) && address(pair) == to;
+        bool isTaxedBuy = address(pair) == from && !isExcludedFromTaxes(to);
+        bool isTaxedSell = !isExcludedFromTaxes(from) && address(pair) == to;
 
         uint256 fee = (isTaxedBuy ? buyFee : 0) + (isTaxedSell ? sellFee : 0);
         uint256 taxAmount = (amount * fee) / feeDenominator;
@@ -160,16 +171,18 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
             super._update(from, address(distributor), taxAmount);
         }
 
-        if (isTaxedSell) {
+        if (rewardsEnabled && isTaxedSell) {
             distributor.distribute(0);
         }
 
         super._update(from, to, actualTransferAmount);
 
-        if (!_isExcludedFromRewards(to)) distributor.updateShare(to);
-        if (!_isExcludedFromRewards(from)) distributor.updateShare(from);
+        if (rewardsEnabled) {
+            distributor.updateShare(to);
+            distributor.updateShare(from);
+        }
 
-        if (!_isExcludedFromMaxWallet(to)) {
+        if (!isExcludedFromMaxWallet(to)) {
             require(balanceOf(to) <= maxWallet, "!maxWallet");
         }
     }

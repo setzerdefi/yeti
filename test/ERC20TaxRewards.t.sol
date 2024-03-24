@@ -24,12 +24,12 @@ contract ERC20TaxRewardsTest is Test {
         distributor = token.distributor();
     }
 
-    function initialize(uint256 rewardTokenAmount) internal {
+    function startTrading(uint256 rewardTokenAmount) internal {
         deal(address(rewardToken), address(this), rewardTokenAmount);
 
         rewardToken.approve(address(token), rewardTokenAmount);
 
-        token.initialize(rewardTokenAmount);
+        token.startTrading(rewardTokenAmount);
     }
 
     function addLiquidity(address addr, uint256 amountTokenDesired, uint256 amountRewardTokenDesired) internal {

@@ -5,13 +5,13 @@ import {ERC20TaxRewardsTest} from "./ERC20TaxRewards.t.sol";
 
 contract LiquidityTest is ERC20TaxRewardsTest {
     function testRemoveAllLiquidity() public {
-        initialize(1000 ether);
+        startTrading(1000 ether);
 
         token.removeMaxWallet();
 
         removeLiquidity(address(this));
 
-        assertApproxEqRel(token.balanceOf(address(this)), (token.TOTAL_SUPPLY() * 76) / 100, 0.01e18);
+        assertApproxEqRel(token.balanceOf(address(this)), (token.totalSupply() * 76) / 100, 0.01e18);
         assertApproxEqRel(rewardToken.balanceOf(address(this)), 1000 ether, 0.01e18);
     }
 
@@ -26,7 +26,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
         assertEq(token.balanceOf(provider), allocation);
 
         // initialize the lp.
-        initialize(990 ether);
+        startTrading(990 ether);
 
         // So we send the 1M tokens with 10 eth. (1eth = 100k tokens)
         addLiquidity(provider, allocation, 10 ether);
@@ -74,7 +74,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
 
         assertEq(token.balanceOf(provider), allocation);
 
-        initialize(990 ether);
+        startTrading(990 ether);
 
         addLiquidity(provider, allocation, 10 ether);
 
@@ -109,7 +109,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
 
         assertEq(token.balanceOf(provider), allocation);
 
-        initialize(990 ether);
+        startTrading(990 ether);
 
         addLiquidity(provider, allocation, 10 ether);
 
@@ -142,7 +142,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
 
         assertEq(token.balanceOf(provider), allocation);
 
-        initialize(990 ether);
+        startTrading(990 ether);
 
         addLiquidity(provider, allocation, 10 ether);
 

@@ -3,12 +3,11 @@ pragma solidity ^0.8.25;
 
 import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ERC20TaxRewards} from "./ERC20TaxRewards.sol";
 import {IDistributor} from "./IDistributor.sol";
 
-contract ERC20Distributor is IDistributor, ReentrancyGuard {
+contract ERC20Distributor is IDistributor {
     using SafeERC20 for IERC20Metadata;
 
     // =========================================================================
@@ -73,7 +72,7 @@ contract ERC20Distributor is IDistributor, ReentrancyGuard {
         return _pendingRewards(shareholders[addr]);
     }
 
-    function claim(address to) external nonReentrant {
+    function claim(address to) external {
         Share storage share = shareholders[msg.sender];
 
         uint256 amountToClaim = _earn(share);
@@ -89,7 +88,7 @@ contract ERC20Distributor is IDistributor, ReentrancyGuard {
         emit Claim(msg.sender, to, amountToClaim);
     }
 
-    function compound(address to, uint256 amountOutMin) external nonReentrant {
+    function compound(address to, uint256 amountOutMin) external {
         Share storage share = shareholders[msg.sender];
 
         uint256 amountToCompound = _earn(share);
@@ -105,7 +104,7 @@ contract ERC20Distributor is IDistributor, ReentrancyGuard {
         emit Compound(msg.sender, to, amountToCompound);
     }
 
-    function distribute(uint256 amountOutMin) external nonReentrant {
+    function distribute(uint256 amountOutMin) external {
         if (totalShares == 0) return;
 
         uint256 collectedTaxAmount = token.balanceOf(address(this));
@@ -126,7 +125,7 @@ contract ERC20Distributor is IDistributor, ReentrancyGuard {
     }
 
     function updateShare(address addr) external {
-        require(address(token) == msg.sender, "!token");
+        if (token.isExcludedFromRewards(addr)) return;
 
         Share storage share = shareholders[addr];
 

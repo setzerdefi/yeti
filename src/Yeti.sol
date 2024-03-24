@@ -4,7 +4,7 @@ pragma solidity ^0.8.25;
 import {ERC20TaxRewards} from "./ERC20TaxRewards.sol";
 
 contract Yeti is ERC20TaxRewards {
-    uint256 public constant TOTAL_SUPPLY = 100_000_000 ether;
+    uint256 public constant INITIAL_TOTAL_SUPPLY = 100_000_000 ether;
 
-    constructor() ERC20TaxRewards("Yeti", "YTI", TOTAL_SUPPLY) {}
+    constructor() ERC20TaxRewards("Yeti", "YTI", INITIAL_TOTAL_SUPPLY) {}
 }

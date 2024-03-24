@@ -8,7 +8,7 @@ contract SwapTest is ERC20TaxRewardsTest {
         address user = vm.addr(1);
 
         // initialize the lp.
-        initialize(1000 ether);
+        startTrading(1000 ether);
 
         // buy 1 ether of tokens.
         buyToken(user, 1 ether);
@@ -37,7 +37,7 @@ contract SwapTest is ERC20TaxRewardsTest {
         // set the tax to 5%.
         token.setFee(500, 500);
 
-        initialize(1000 ether);
+        startTrading(1000 ether);
 
         buyToken(user, 1 ether);
 
@@ -60,7 +60,7 @@ contract SwapTest is ERC20TaxRewardsTest {
         // set the tax to 5%/0%.
         token.setFee(500, 0);
 
-        initialize(1000 ether);
+        startTrading(1000 ether);
 
         buyToken(user, 1 ether);
 
@@ -83,7 +83,7 @@ contract SwapTest is ERC20TaxRewardsTest {
         // set the tax to 0%/5%.
         token.setFee(0, 500);
 
-        initialize(1000 ether);
+        startTrading(1000 ether);
 
         buyToken(user, 1 ether);
 

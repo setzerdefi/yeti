@@ -111,9 +111,11 @@ contract ERC20Distributor is IDistributor {
 
         if (collectedTaxAmount == 0) return;
 
+        uint256 originalBalance = rewardToken.balanceOf(address(this));
+
         _swapTokenForRewardToken(address(this), collectedTaxAmount, amountOutMin);
 
-        uint256 amountToDistribute = rewardToken.balanceOf(address(this));
+        uint256 amountToDistribute = rewardToken.balanceOf(address(this)) - originalBalance;
 
         if (amountToDistribute == 0) return;
 

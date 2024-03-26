@@ -250,4 +250,107 @@ contract DistributionTest is ERC20TaxRewardsTest {
         assertEq(pr(5), 0);
         assertEq(pr(6), 0);
     }
+
+    function testDistributionIntegration2() public {
+        // start trading.
+        startTrading(1000 ether);
+
+        // remove max wallet.
+        token.removeMaxWallet();
+
+        // buy some tokens.
+        buyToken(vm.addr(1), 1 ether);
+        buyToken(vm.addr(2), 2 ether);
+        buyToken(vm.addr(3), 3 ether);
+        buyToken(vm.addr(4), 4 ether);
+
+        // distribute the rewards once.
+        distributor.distribute(0);
+
+        // two claims and two compounds.
+        claim(1);
+        claim(3);
+        compound(2);
+        compound(4);
+
+        // buy more.
+        buyToken(vm.addr(1), 1 ether);
+        buyToken(vm.addr(2), 2 ether);
+        buyToken(vm.addr(3), 3 ether);
+        buyToken(vm.addr(4), 4 ether);
+
+        // make some token donation to the contract.
+        uint256 bo1 = bo(1);
+
+        vm.prank(vm.addr(1));
+
+        token.transfer(address(distributor), bo1 / 2);
+
+        // make some reward token donation to the contract.
+        donate(1 ether);
+
+        // distribute another time.
+        distributor.distribute(0);
+
+        // two claims and two compounds.
+        compound(1);
+        compound(3);
+        claim(2);
+        claim(4);
+
+        // another time?
+        buyToken(vm.addr(1), 1 ether);
+        buyToken(vm.addr(2), 2 ether);
+        buyToken(vm.addr(3), 3 ether);
+        buyToken(vm.addr(4), 4 ether);
+
+        // make some token donation to the contract.
+        uint256 bo2 = bo(2);
+
+        vm.prank(vm.addr(2));
+
+        token.transfer(address(distributor), bo2 / 2);
+
+        // make some reward token donation to the contract.
+        donate(1 ether);
+
+        // distribute another time.
+        distributor.distribute(0);
+
+        // lets go again.
+        buyToken(vm.addr(1), 1 ether);
+        buyToken(vm.addr(2), 2 ether);
+        buyToken(vm.addr(3), 3 ether);
+        buyToken(vm.addr(4), 4 ether);
+
+        // make some token donation to the contract.
+        uint256 bo3 = bo(3);
+
+        vm.prank(vm.addr(3));
+
+        token.transfer(address(distributor), bo3 / 2);
+
+        // make some reward token donation to the contract.
+        donate(1 ether);
+
+        // distribute another time.
+        distributor.distribute(0);
+
+        // everyone should be able to claim everything.
+        claim(1);
+        claim(2);
+        claim(3);
+        claim(4);
+
+        // distributor should be empty.
+        assertEq(token.balanceOf(address(distributor)), 0);
+        assertApproxEqAbs(rewardToken.balanceOf(address(distributor)), 0, 5_000_000);
+
+        // the assertion should hold.
+        assertEq(
+            rewardToken.balanceOf(address(distributor)),
+            distributor.totalRewardDistributed() - distributor.totalRewardClaimed()
+                - distributor.totalRewardCompounded()
+        );
+    }
 }

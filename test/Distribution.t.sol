@@ -353,4 +353,63 @@ contract DistributionTest is ERC20TaxRewardsTest {
                 - distributor.totalRewardCompounded()
         );
     }
+
+    function testDisableRewards() public {
+        // start trading.
+        startTrading(1000 ether);
+
+        // remove max wallet.
+        token.removeMaxWallet();
+
+        // buy some tokens.
+        buyToken(vm.addr(1), 1 ether);
+        buyToken(vm.addr(2), 2 ether);
+        buyToken(vm.addr(3), 3 ether);
+        buyToken(vm.addr(4), 4 ether);
+
+        // distribute.
+        distributor.distribute(0);
+
+        // claim all.
+        claim(1);
+        claim(2);
+        claim(3);
+        claim(4);
+
+        // distributor should be empty.
+        assertEq(token.balanceOf(address(distributor)), 0);
+        assertApproxEqAbs(rewardToken.balanceOf(address(distributor)), 0, 5_000_000);
+
+        // record the current shares and current reward balance.
+        uint256 originalTotalShares = distributor.totalShares();
+        uint256 originalRewardBalance = rewardToken.balanceOf(address(distributor));
+
+        // stop the rewards.
+        token._emergencyDisableRewards();
+
+        // people can still buy and sell but without tax/rewards.
+        buyToken(vm.addr(1), 1 ether);
+        buyToken(vm.addr(2), 2 ether);
+        buyToken(vm.addr(3), 3 ether);
+        buyToken(vm.addr(4), 4 ether);
+        sellToken(vm.addr(1), bo(1) / 2);
+        sellToken(vm.addr(2), bo(2) / 2);
+        sellToken(vm.addr(3), bo(3) / 2);
+        sellToken(vm.addr(4), bo(4) / 2);
+
+        // distributor should have collected no tax.
+        assertEq(token.balanceOf(address(distributor)), 0);
+
+        // total shares should be the same.
+        assertEq(distributor.totalShares(), originalTotalShares);
+
+        // reward token balance should be the same.
+        assertEq(rewardToken.balanceOf(address(distributor)), originalRewardBalance);
+
+        // nobody should have rewards.
+        assertEq(pr(1), 0);
+        assertEq(pr(2), 0);
+        assertEq(pr(3), 0);
+        assertEq(pr(4), 0);
+    }
 }

@@ -97,4 +97,24 @@ contract CompoundTest is ERC20TaxRewardsTest {
 
         compound(2);
     }
+
+    function testCompoundNothingDoesNothing() public {
+        uint256 allocation = 1_000_000 ether;
+
+        token.allocate(vm.addr(1), allocation);
+        token.allocate(vm.addr(2), allocation);
+
+        distribute(2 ether);
+
+        // user 3 compound does nothing.
+        compound(3);
+
+        assertEq(token.balanceOf(vm.addr(3)), 0);
+        assertEq(rewardToken.balanceOf(vm.addr(3)), 0);
+        assertEq(token.balanceOf(address(distributor)), 0);
+        assertEq(rewardToken.balanceOf(address(distributor)), 2 ether);
+        assertEq(distributor.totalRewardClaimed(), 0);
+        assertEq(distributor.totalRewardCompounded(), 0);
+        assertEq(distributor.totalRewardDistributed(), 2 ether);
+    }
 }

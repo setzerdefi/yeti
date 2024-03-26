@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import {console2} from "forge-std/Test.sol";
 import {ERC20TaxRewardsTest} from "./ERC20TaxRewards.t.sol";
 
 contract CompoundTest is ERC20TaxRewardsTest {

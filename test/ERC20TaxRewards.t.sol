@@ -24,6 +24,46 @@ contract ERC20TaxRewardsTest is Test {
         distributor = token.distributor();
     }
 
+    function bo(uint256 i) internal view returns (uint256) {
+        return token.balanceOf(vm.addr(i));
+    }
+
+    function pr(uint256 i) internal view returns (uint256) {
+        return distributor.pendingRewards(vm.addr(i));
+    }
+
+    function rbo(uint256 i) internal view returns (uint256) {
+        return rewardToken.balanceOf(vm.addr(i));
+    }
+
+    function claim(uint256 i) internal {
+        vm.prank(vm.addr(i));
+
+        distributor.claim(vm.addr(i));
+    }
+
+    function compound(uint256 i) internal {
+        vm.prank(vm.addr(i));
+
+        distributor.compound(vm.addr(i), 0);
+    }
+
+    function emptyRewards(uint256 i) internal {
+        uint256 balance = rewardToken.balanceOf(vm.addr(i));
+
+        vm.prank(vm.addr(i));
+
+        rewardToken.transfer(vm.addr(100), balance);
+    }
+
+    function distribute(uint256 amount) internal {
+        uint256 balance = rewardToken.balanceOf(address(distributor));
+
+        deal(address(rewardToken), address(distributor), balance + amount);
+
+        distributor.distribute(0);
+    }
+
     function startTrading(uint256 rewardTokenAmount) internal {
         deal(address(rewardToken), address(this), rewardTokenAmount);
 

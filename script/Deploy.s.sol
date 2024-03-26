@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import {Script, console2} from "forge-std/Script.sol";
+import {Script} from "forge-std/Script.sol";
+
+import {Yeti} from "../src/Yeti.sol";
 
 contract DeployScript is Script {
-    function setUp() public {}
-
     function run() public {
-        vm.broadcast();
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+
+        vm.startBroadcast(deployerPrivateKey);
+        new Yeti();
+        vm.stopBroadcast();
     }
 }

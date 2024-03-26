@@ -63,9 +63,7 @@ contract ERC20TaxRewardsTest is Test {
     }
 
     function distribute(uint256 amount) internal {
-        uint256 balance = rewardToken.balanceOf(address(distributor));
-
-        deal(address(rewardToken), address(distributor), balance + amount);
+        donate(amount);
 
         distributor.distribute(0);
     }

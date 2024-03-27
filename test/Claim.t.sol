@@ -7,10 +7,10 @@ contract ClaimTest is ERC20TaxRewardsTest {
     event Claim(address indexed addr, address indexed to, uint256 amount);
 
     function testTotalRewardClaimedIncreases() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         distribute(2 ether);
 
@@ -24,10 +24,10 @@ contract ClaimTest is ERC20TaxRewardsTest {
     }
 
     function testClaimSameShareSameRewards() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         distribute(2 ether);
 
@@ -42,10 +42,10 @@ contract ClaimTest is ERC20TaxRewardsTest {
     }
 
     function testClaimTwiceShareTwiceRewards() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), 1 * allocation);
-        token.allocate(vm.addr(2), 2 * allocation);
+        allocate(vm.addr(1), 1 * allocation);
+        allocate(vm.addr(2), 2 * allocation);
 
         distribute(3 ether);
 
@@ -60,10 +60,10 @@ contract ClaimTest is ERC20TaxRewardsTest {
     }
 
     function testClaimEmits() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         distribute(2 ether);
 
@@ -81,10 +81,10 @@ contract ClaimTest is ERC20TaxRewardsTest {
     }
 
     function testClaimNothingDoesNothing() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         distribute(2 ether);
 

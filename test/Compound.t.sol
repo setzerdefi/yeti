@@ -7,10 +7,10 @@ contract CompoundTest is ERC20TaxRewardsTest {
     event Compound(address indexed addr, address indexed to, uint256 amount);
 
     function testTotalRewardCompoundedIncreases() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         startTrading(1000 ether);
 
@@ -28,10 +28,10 @@ contract CompoundTest is ERC20TaxRewardsTest {
     }
 
     function testCompoundSameShareSameTokens() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         startTrading(1000 ether);
 
@@ -51,10 +51,10 @@ contract CompoundTest is ERC20TaxRewardsTest {
     }
 
     function testCompoundTwiceShareTwiceTokens() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), 1 * allocation);
-        token.allocate(vm.addr(2), 2 * allocation);
+        allocate(vm.addr(1), 1 * allocation);
+        allocate(vm.addr(2), 2 * allocation);
 
         startTrading(1000 ether);
 
@@ -74,10 +74,10 @@ contract CompoundTest is ERC20TaxRewardsTest {
     }
 
     function testCompoundEmits() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         startTrading(1000 ether);
 
@@ -99,10 +99,10 @@ contract CompoundTest is ERC20TaxRewardsTest {
     }
 
     function testCompoundNothingDoesNothing() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         distribute(2 ether);
 

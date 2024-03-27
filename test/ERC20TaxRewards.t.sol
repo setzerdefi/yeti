@@ -1,40 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.25;
 
-import {Test} from "forge-std/Test.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {IUniswapV2Pair} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import {IDistributor} from "../src/IDistributor.sol";
-import {Yeti} from "../src/Yeti.sol";
-
 import {Commands} from "@uniswap/universal-router/contracts/libraries/Commands.sol";
 import {IUniversalRouter} from "@uniswap/universal-router/contracts/interfaces/IUniversalRouter.sol";
+import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import {ERC20TaxRewardsSetup} from "./ERC20TaxRewardsSetup.sol";
 
 interface IPermit2 {
     function approve(address token, address spender, uint160 amount, uint48 expiration) external;
 }
 
-contract ERC20TaxRewardsTest is Test {
+contract ERC20TaxRewardsTest is ERC20TaxRewardsSetup {
     IPermit2 private constant permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
     IUniversalRouter private constant universalRouter = IUniversalRouter(0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD);
-
-    Yeti internal token;
-    IUniswapV2Pair internal pair;
-    IUniswapV2Router02 internal router;
-    IERC20 internal rewardToken;
-    IDistributor internal distributor;
-
-    function setUp() public {
-        token = new Yeti();
-
-        pair = token.pair();
-        router = token.router();
-        rewardToken = token.rewardToken();
-        distributor = token.distributor();
-
-        token.initialize();
-    }
+    IUniswapV2Router02 private constant routerV2 = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
 
     function bo(uint256 i) internal view returns (uint256) {
         return token.balanceOf(vm.addr(i));
@@ -80,21 +59,21 @@ contract ERC20TaxRewardsTest is Test {
         distributor.distribute(0);
     }
 
+    function allocate(address addr, uint256 amount) internal {
+        token.transfer(addr, amount);
+    }
+
     function startTrading(uint256 rewardTokenAmount) internal {
-        deal(address(rewardToken), address(this), rewardTokenAmount);
-
-        rewardToken.approve(address(token), rewardTokenAmount);
-
-        token.startTrading(rewardTokenAmount);
+        addLiquidity(address(this), token.balanceOf(address(this)), rewardTokenAmount);
     }
 
     function addLiquidity(address addr, uint256 amountTokenDesired, uint256 amountRewardTokenDesired) internal {
         deal(address(rewardToken), addr, amountRewardTokenDesired);
 
         vm.startPrank(addr);
-        token.approve(address(router), amountTokenDesired);
-        rewardToken.approve(address(router), amountRewardTokenDesired);
-        router.addLiquidity(
+        token.approve(address(routerV2), amountTokenDesired);
+        rewardToken.approve(address(routerV2), amountRewardTokenDesired);
+        routerV2.addLiquidity(
             address(token),
             address(rewardToken),
             amountTokenDesired,
@@ -111,8 +90,8 @@ contract ERC20TaxRewardsTest is Test {
         uint256 liquidity = pair.balanceOf(addr);
 
         vm.startPrank(addr);
-        pair.approve(address(router), liquidity);
-        router.removeLiquidity(address(token), address(rewardToken), liquidity, 0, 0, addr, block.timestamp);
+        pair.approve(address(routerV2), liquidity);
+        routerV2.removeLiquidity(address(token), address(rewardToken), liquidity, 0, 0, addr, block.timestamp);
         vm.stopPrank();
     }
 

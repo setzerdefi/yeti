@@ -7,10 +7,10 @@ contract DistributionTest is ERC20TaxRewardsTest {
     event Distribute(address indexed addr, uint256 amount);
 
     function testTotalRewardDistributedIncreases() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         assertEq(distributor.totalRewardDistributed(), 0);
 
@@ -24,11 +24,11 @@ contract DistributionTest is ERC20TaxRewardsTest {
     }
 
     function testTokenDonations() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
-        token.allocate(vm.addr(3), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
+        allocate(vm.addr(3), allocation);
 
         startTrading(1000 ether);
 
@@ -53,10 +53,10 @@ contract DistributionTest is ERC20TaxRewardsTest {
     }
 
     function testRewardTokenDonations() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         distribute(2 ether);
 
@@ -71,11 +71,11 @@ contract DistributionTest is ERC20TaxRewardsTest {
     }
 
     function testBothTokenDonations() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
-        token.allocate(vm.addr(3), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
+        allocate(vm.addr(3), allocation);
 
         startTrading(1000 ether);
 
@@ -100,10 +100,10 @@ contract DistributionTest is ERC20TaxRewardsTest {
     }
 
     function testDistributeEmits() public {
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), allocation);
-        token.allocate(vm.addr(2), allocation);
+        allocate(vm.addr(1), allocation);
+        allocate(vm.addr(2), allocation);
 
         vm.expectEmit(true, true, true, true, address(distributor));
 
@@ -114,17 +114,17 @@ contract DistributionTest is ERC20TaxRewardsTest {
 
     function testDistributionIntegration1() public {
         // allocation shares are accounted.
-        uint256 allocation = 1_000_000 ether;
+        uint256 allocation = 100_000 ether;
 
-        token.allocate(vm.addr(1), 1 * allocation);
+        allocate(vm.addr(1), 1 * allocation);
 
         assertEq(distributor.totalShares(), bo(1));
 
-        token.allocate(vm.addr(2), 2 * allocation);
+        allocate(vm.addr(2), 2 * allocation);
 
         assertEq(distributor.totalShares(), bo(1) + bo(2));
 
-        token.allocate(vm.addr(3), 3 * allocation);
+        allocate(vm.addr(3), 3 * allocation);
 
         assertEq(distributor.totalShares(), bo(1) + bo(2) + bo(3));
 

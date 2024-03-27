@@ -10,7 +10,8 @@ contract DeployScript is Script {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
-        new Yeti();
+        Yeti yeti = new Yeti();
+        yeti.initialize();
         vm.stopBroadcast();
     }
 }

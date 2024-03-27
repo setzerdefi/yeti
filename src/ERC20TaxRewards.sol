@@ -8,9 +8,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {IUniswapV2Pair} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Factory} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import {IDistributor} from "./IDistributor.sol";
 import {ERC20Distributor} from "./ERC20Distributor.sol";
+import {IDistributor} from "./IDistributor.sol";
 
 contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     using SafeERC20 for IERC20Metadata;
@@ -20,15 +19,13 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // =========================================================================
 
     IUniswapV2Factory public constant factory = IUniswapV2Factory(0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6);
-    IUniswapV2Router02 public constant router = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
     IERC20Metadata public constant rewardToken = IERC20Metadata(0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22); // cbETH
-    IDistributor public distributor;
+    IDistributor public immutable distributor;
 
     // =========================================================================
     // trading.
     // =========================================================================
 
-    uint256 public startBlock;
     uint256 public initializeBlock;
 
     IUniswapV2Pair public immutable pair;
@@ -36,8 +33,6 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // =========================================================================
     // operator values.
     // =========================================================================
-
-    address public operator;
 
     uint256 public maxWallet = type(uint256).max;
 
@@ -54,68 +49,30 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     bool public rewardsEnabled = true;
 
     // =========================================================================
-    // modifiers.
-    // =========================================================================
-
-    modifier onlyOperator() {
-        require(msg.sender == operator, "!operator");
-        _;
-    }
-
-    // =========================================================================
     // constructor.
     // =========================================================================
 
     constructor(string memory name, string memory symbol) Ownable(msg.sender) ERC20(name, symbol) {
-        operator = msg.sender;
-
         pair = IUniswapV2Pair(factory.createPair(address(rewardToken), address(this)));
 
         distributor = new ERC20Distributor(this, rewardToken);
     }
 
-    // =========================================================================
-    // exposed admin functions.
-    // =========================================================================
+    function _initialize(uint256 _totalSupply) internal {
+        require(initializeBlock == 0, "!initialized");
 
-    function allocate(address to, uint256 amount) external onlyOwner {
-        require(startBlock == 0, "!started");
-        require(initializeBlock > 0, "!initialized");
+        initializeBlock = block.timestamp;
 
-        this.transfer(to, amount);
-    }
+        _mint(owner(), _totalSupply);
 
-    function startTrading(uint256 rewardTokenAmount) external onlyOwner {
-        require(startBlock == 0, "!started");
-        require(initializeBlock > 0, "!initialized");
-        require(rewardTokenAmount > 0, "!liquidity");
-
-        startBlock = block.number;
-
-        maxWallet = totalSupply() / 100;
-
-        uint256 tokenAmount = balanceOf(address(this));
-
-        rewardToken.safeTransferFrom(msg.sender, address(this), rewardTokenAmount);
-
-        this.approve(address(router), tokenAmount);
-        rewardToken.approve(address(router), rewardTokenAmount);
-
-        router.addLiquidity(
-            address(this), address(rewardToken), tokenAmount, rewardTokenAmount, 0, 0, msg.sender, block.timestamp
-        );
+        maxWallet = _totalSupply / 100;
     }
 
     // =========================================================================
-    // exposed operator functions.
+    // owner functions.
     // =========================================================================
 
-    function setOperator(address _operator) external onlyOperator {
-        require(address(0) != _operator, "!address");
-        operator = _operator;
-    }
-
-    function setFee(uint24 _buyFee, uint24 _sellFee) external onlyOperator {
+    function setFee(uint24 _buyFee, uint24 _sellFee) external onlyOwner {
         require(rewardsEnabled, "!rewards");
         require(_buyFee <= maxSwapFee, "!buyFee");
         require(_sellFee <= maxSwapFee, "!sellFee");
@@ -124,11 +81,11 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
         sellFee = _sellFee;
     }
 
-    function removeMaxWallet() external onlyOperator {
+    function removeMaxWallet() external onlyOwner {
         maxWallet = type(uint256).max;
     }
 
-    function _emergencyDisableRewards() external onlyOperator {
+    function _emergencyDisableRewards() external onlyOwner {
         buyFee = 0;
         sellFee = 0;
         rewardsEnabled = false;
@@ -139,7 +96,7 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // =========================================================================
 
     function isExcludedFromTaxes(address addr) public view returns (bool) {
-        return address(this) == addr || address(distributor) == addr;
+        return owner() == addr || address(distributor) == addr;
     }
 
     function isExcludedFromMaxWallet(address addr) public view returns (bool) {

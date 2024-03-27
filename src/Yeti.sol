@@ -9,10 +9,6 @@ contract Yeti is ERC20TaxRewards {
     constructor() ERC20TaxRewards("Yeti", "YETI") {}
 
     function initialize() external onlyOwner {
-        require(initializeBlock == 0, "!initialized");
-
-        initializeBlock = block.timestamp;
-
-        _mint(address(this), INITIAL_TOTAL_SUPPLY);
+        _initialize(INITIAL_TOTAL_SUPPLY);
     }
 }

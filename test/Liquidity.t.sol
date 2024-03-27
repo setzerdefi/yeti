@@ -7,11 +7,9 @@ contract LiquidityTest is ERC20TaxRewardsTest {
     function testRemoveAllLiquidity() public {
         startTrading(1000 ether);
 
-        token.removeMaxWallet();
-
         removeLiquidity(address(this));
 
-        assertApproxEqRel(token.balanceOf(address(this)), (token.totalSupply() * 76) / 100, 0.01e18);
+        assertApproxEqRel(token.balanceOf(address(this)), token.totalSupply(), 0.01e18);
         assertApproxEqRel(rewardToken.balanceOf(address(this)), 1000 ether, 0.01e18);
     }
 
@@ -21,7 +19,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
         // allocate some tokens to the provider.
         uint256 allocation = 1_000_000 ether;
 
-        token.allocate(provider, allocation);
+        allocate(provider, allocation);
 
         assertEq(token.balanceOf(provider), allocation);
 
@@ -70,7 +68,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
 
         uint256 allocation = 1_000_000 ether;
 
-        token.allocate(provider, allocation);
+        allocate(provider, allocation);
 
         assertEq(token.balanceOf(provider), allocation);
 
@@ -105,7 +103,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
 
         uint256 allocation = 1_000_000 ether;
 
-        token.allocate(provider, allocation);
+        allocate(provider, allocation);
 
         assertEq(token.balanceOf(provider), allocation);
 
@@ -138,7 +136,7 @@ contract LiquidityTest is ERC20TaxRewardsTest {
 
         uint256 allocation = 1_000_000 ether;
 
-        token.allocate(provider, allocation);
+        allocate(provider, allocation);
 
         assertEq(token.balanceOf(provider), allocation);
 

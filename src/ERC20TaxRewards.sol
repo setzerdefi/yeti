@@ -19,6 +19,7 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // dependencies.
     // =========================================================================
 
+    IUniswapV2Factory public constant factory = IUniswapV2Factory(0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6);
     IUniswapV2Router02 public constant router = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
     IERC20Metadata public constant rewardToken = IERC20Metadata(0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22); // cbETH
     IDistributor public distributor;
@@ -28,6 +29,7 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // =========================================================================
 
     uint256 public startBlock;
+    uint256 public initializeBlock;
 
     IUniswapV2Pair public immutable pair;
 
@@ -49,7 +51,7 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
 
     // can disable rewards mechanism in case of a problem.
     // can't be reenabled after operator calling _emergencyDisableRewards().
-    bool public rewardsEnabled;
+    bool public rewardsEnabled = true;
 
     // =========================================================================
     // modifiers.
@@ -64,21 +66,12 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // constructor.
     // =========================================================================
 
-    constructor(string memory name, string memory symbol, uint256 _totalSupply)
-        Ownable(msg.sender)
-        ERC20(name, symbol)
-    {
+    constructor(string memory name, string memory symbol) Ownable(msg.sender) ERC20(name, symbol) {
         operator = msg.sender;
-
-        IUniswapV2Factory factory = IUniswapV2Factory(router.factory());
 
         pair = IUniswapV2Pair(factory.createPair(address(rewardToken), address(this)));
 
-        distributor = new ERC20Distributor(this, router, rewardToken);
-
-        _mint(address(this), _totalSupply);
-
-        rewardsEnabled = true;
+        distributor = new ERC20Distributor(this, rewardToken);
     }
 
     // =========================================================================
@@ -87,12 +80,14 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
 
     function allocate(address to, uint256 amount) external onlyOwner {
         require(startBlock == 0, "!started");
+        require(initializeBlock > 0, "!initialized");
 
         this.transfer(to, amount);
     }
 
     function startTrading(uint256 rewardTokenAmount) external onlyOwner {
         require(startBlock == 0, "!started");
+        require(initializeBlock > 0, "!initialized");
         require(rewardTokenAmount > 0, "!liquidity");
 
         startBlock = block.number;

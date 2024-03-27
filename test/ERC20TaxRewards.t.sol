@@ -22,6 +22,8 @@ contract ERC20TaxRewardsTest is Test {
         router = token.router();
         rewardToken = token.rewardToken();
         distributor = token.distributor();
+
+        token.initialize();
     }
 
     function bo(uint256 i) internal view returns (uint256) {

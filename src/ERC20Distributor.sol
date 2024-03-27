@@ -14,8 +14,9 @@ contract ERC20Distributor is IDistributor {
     // dependencies.
     // =========================================================================
 
+    IUniswapV2Router02 public constant router = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
+
     ERC20TaxRewards public immutable token;
-    IUniswapV2Router02 public immutable router;
     IERC20Metadata public immutable rewardToken;
 
     // =========================================================================
@@ -44,9 +45,8 @@ contract ERC20Distributor is IDistributor {
     // constructor.
     // =========================================================================
 
-    constructor(ERC20TaxRewards _token, IUniswapV2Router02 _router, IERC20Metadata _rewardToken) {
+    constructor(ERC20TaxRewards _token, IERC20Metadata _rewardToken) {
         token = _token;
-        router = _router;
         rewardToken = _rewardToken;
 
         uint8 rewardTokenDecimals = _rewardToken.decimals();

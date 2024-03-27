@@ -6,5 +6,13 @@ import {ERC20TaxRewards} from "./ERC20TaxRewards.sol";
 contract Yeti is ERC20TaxRewards {
     uint256 public constant INITIAL_TOTAL_SUPPLY = 100_000_000 ether;
 
-    constructor() ERC20TaxRewards("Yeti", "YETI", INITIAL_TOTAL_SUPPLY) {}
+    constructor() ERC20TaxRewards("Yeti", "YETI") {}
+
+    function initialize() external onlyOwner {
+        require(initializeBlock == 0, "!initialized");
+
+        initializeBlock = block.timestamp;
+
+        _mint(address(this), INITIAL_TOTAL_SUPPLY);
+    }
 }

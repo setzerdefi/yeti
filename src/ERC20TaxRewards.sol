@@ -61,7 +61,7 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     function _initialize(uint256 _totalSupply) internal {
         require(initializeBlock == 0, "!initialized");
 
-        initializeBlock = block.timestamp;
+        initializeBlock = block.number;
 
         _mint(owner(), _totalSupply);
 

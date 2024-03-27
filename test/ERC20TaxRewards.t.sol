@@ -8,7 +8,12 @@ import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUn
 import {IDistributor} from "../src/IDistributor.sol";
 import {Yeti} from "../src/Yeti.sol";
 
+import {Commands} from "@uniswap/universal-router/contracts/libraries/Commands.sol";
+import {IUniversalRouter} from "@uniswap/universal-router/contracts/interfaces/IUniversalRouter.sol";
+
 contract ERC20TaxRewardsTest is Test {
+    IUniversalRouter universalRouter = IUniversalRouter(0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD);
+
     Yeti internal token;
     IUniswapV2Pair internal pair;
     IUniswapV2Router02 internal router;
@@ -107,26 +112,32 @@ contract ERC20TaxRewardsTest is Test {
     }
 
     function buyToken(address addr, uint256 amountIn) internal {
+        deal(address(rewardToken), addr, amountIn);
+
+        bytes memory commands = abi.encodePacked(bytes1(uint8(Commands.V2_SWAP_EXACT_IN)));
         address[] memory path = new address[](2);
         path[0] = address(rewardToken);
         path[1] = address(token);
-
-        deal(address(rewardToken), addr, amountIn);
+        bytes[] memory inputs = new bytes[](1);
+        inputs[0] = abi.encode(addr, amountIn, 0, path, true);
 
         vm.startPrank(addr);
         rewardToken.approve(address(router), amountIn);
-        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, 0, path, addr, block.timestamp);
+        universalRouter.execute(commands, inputs, block.timestamp);
         vm.stopPrank();
     }
 
     function sellToken(address addr, uint256 amountIn) internal {
+        bytes memory commands = abi.encodePacked(bytes1(uint8(Commands.V2_SWAP_EXACT_IN)));
         address[] memory path = new address[](2);
         path[0] = address(token);
         path[1] = address(rewardToken);
+        bytes[] memory inputs = new bytes[](1);
+        inputs[0] = abi.encode(addr, amountIn, 0, path, true);
 
         vm.startPrank(addr);
         token.approve(address(router), amountIn);
-        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, 0, path, addr, block.timestamp);
+        universalRouter.execute(commands, inputs, block.timestamp);
         vm.stopPrank();
     }
 }

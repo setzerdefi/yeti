@@ -139,7 +139,7 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     // =========================================================================
 
     function isExcludedFromTaxes(address addr) public view returns (bool) {
-        return address(this) == addr || address(router) == addr || address(distributor) == addr;
+        return address(this) == addr || address(distributor) == addr;
     }
 
     function isExcludedFromMaxWallet(address addr) public view returns (bool) {

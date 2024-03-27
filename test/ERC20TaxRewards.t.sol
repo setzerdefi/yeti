@@ -11,8 +11,13 @@ import {Yeti} from "../src/Yeti.sol";
 import {Commands} from "@uniswap/universal-router/contracts/libraries/Commands.sol";
 import {IUniversalRouter} from "@uniswap/universal-router/contracts/interfaces/IUniversalRouter.sol";
 
+interface IPermit2 {
+    function approve(address token, address spender, uint160 amount, uint48 expiration) external;
+}
+
 contract ERC20TaxRewardsTest is Test {
-    IUniversalRouter universalRouter = IUniversalRouter(0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD);
+    IPermit2 private constant permit2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+    IUniversalRouter private constant universalRouter = IUniversalRouter(0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD);
 
     Yeti internal token;
     IUniswapV2Pair internal pair;
@@ -122,7 +127,8 @@ contract ERC20TaxRewardsTest is Test {
         inputs[0] = abi.encode(addr, amountIn, 0, path, true);
 
         vm.startPrank(addr);
-        rewardToken.approve(address(router), amountIn);
+        rewardToken.approve(address(permit2), amountIn);
+        permit2.approve(address(rewardToken), address(universalRouter), uint160(amountIn), type(uint48).max);
         universalRouter.execute(commands, inputs, block.timestamp);
         vm.stopPrank();
     }
@@ -136,7 +142,8 @@ contract ERC20TaxRewardsTest is Test {
         inputs[0] = abi.encode(addr, amountIn, 0, path, true);
 
         vm.startPrank(addr);
-        token.approve(address(router), amountIn);
+        token.approve(address(permit2), amountIn);
+        permit2.approve(address(token), address(universalRouter), uint160(amountIn), type(uint48).max);
         universalRouter.execute(commands, inputs, block.timestamp);
         vm.stopPrank();
     }

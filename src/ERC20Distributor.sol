@@ -3,7 +3,8 @@ pragma solidity ^0.8.25;
 
 import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import {IUniswapV2Pair} from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import {UniswapV2Library} from "@uniswap/universal-router/contracts/modules/uniswap/v2/UniswapV2Library.sol";
 import {ERC20TaxRewards} from "./ERC20TaxRewards.sol";
 import {IDistributor} from "./IDistributor.sol";
 
@@ -14,10 +15,9 @@ contract ERC20Distributor is IDistributor {
     // dependencies.
     // =========================================================================
 
-    IUniswapV2Router02 public constant router = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
-
     ERC20TaxRewards public immutable token;
     IERC20Metadata public immutable rewardToken;
+    IUniswapV2Pair public immutable pair;
 
     // =========================================================================
     // rewards management.
@@ -45,9 +45,10 @@ contract ERC20Distributor is IDistributor {
     // constructor.
     // =========================================================================
 
-    constructor(ERC20TaxRewards _token, IERC20Metadata _rewardToken) {
+    constructor(ERC20TaxRewards _token, IERC20Metadata _rewardToken, IUniswapV2Pair _pair) {
         token = _token;
         rewardToken = _rewardToken;
+        pair = _pair;
 
         uint8 rewardTokenDecimals = _rewardToken.decimals();
 
@@ -164,14 +165,27 @@ contract ERC20Distributor is IDistributor {
     }
 
     function _swap(address tokenA, address tokenB, address to, uint256 amountIn, uint256 amountOutMin) private {
-        if (amountIn == 0) return;
+        IERC20Metadata(tokenA).transfer(address(pair), amountIn);
 
-        IERC20Metadata(tokenA).approve(address(router), amountIn);
+        uint256 balanceBefore = IERC20Metadata(tokenB).balanceOf(to);
 
-        address[] memory path = new address[](2);
-        path[0] = tokenA;
-        path[1] = tokenB;
+        _v2Swap(tokenA, tokenB, to);
 
-        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, amountOutMin, path, to, block.timestamp);
+        uint256 amountOut = IERC20Metadata(tokenB).balanceOf(to) - balanceBefore;
+        if (amountOut < amountOutMin) revert("V2TooLittleReceived");
+    }
+
+    function _v2Swap(address tokenA, address tokenB, address to) private {
+        unchecked {
+            (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
+            (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+            (uint256 reserveInput, uint256 reserveOutput) =
+                tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+            uint256 amountInput = IERC20Metadata(tokenA).balanceOf(address(pair)) - reserveInput;
+            uint256 amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput);
+            (uint256 amount0Out, uint256 amount1Out) =
+                tokenA == token0 ? (uint256(0), amountOutput) : (amountOutput, uint256(0));
+            pair.swap(amount0Out, amount1Out, to, new bytes(0));
+        }
     }
 }

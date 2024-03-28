@@ -55,7 +55,7 @@ contract ERC20TaxRewards is Ownable, ERC20, ERC20Burnable {
     constructor(string memory name, string memory symbol) Ownable(msg.sender) ERC20(name, symbol) {
         pair = IUniswapV2Pair(factory.createPair(address(rewardToken), address(this)));
 
-        distributor = new ERC20Distributor(this, rewardToken);
+        distributor = new ERC20Distributor(this, rewardToken, pair);
     }
 
     function _initialize(uint256 _totalSupply) internal {
